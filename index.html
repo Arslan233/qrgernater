@@ -9,15 +9,15 @@
   <meta name="description" content="SmartQR is a free QR code generator and online scanner. Create custom QR codes for links, text, WiFi, email, SMS, and vCard. Scan QR by camera or image instantly with sound feedback." />
   <meta name="keywords" content="qr code generator, qr scanner online, qr scanner with sound, qr code maker, qr code generator free, barcode reader, free qr tool, smart qr" />
   <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://yourdomain.com/" />
+  <link rel="canonical" href="https://qrgenerator.online/" />
   <link rel="icon" href="data:;base64,iVBORw0KGgo=">
 
   <!-- Open Graph -->
   <meta property="og:title" content="SmartQR – Free QR Code Generator & Scanner" />
   <meta property="og:description" content="Generate and scan QR codes online for free. Create custom QR codes for links, text, WiFi, email, SMS, and vCard instantly with sound feedback." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://yourdomain.com/" />
-  <meta property="og:image" content="https://yourdomain.com/og-image.jpg" />
+  <meta property="og:url" content="https://qrgenerator.online/" />
+  <meta property="og:image" content="https://qrgenerator.online/og-image.jpg" />
 
   <!-- JSON-LD Schema -->
   <script type="application/ld+json">
@@ -25,7 +25,7 @@
     "@context":"https://schema.org",
     "@type":"WebApplication",
     "name":"SmartQR",
-    "url":"https://yourdomain.com/",
+    "url":"https://qrgenerator.online/",
     "description":"Free QR Code Generator & Scanner with instant camera and image scanning.",
     "applicationCategory":"Utility",
     "operatingSystem":"All"
@@ -196,7 +196,7 @@
   <section id="contact" class="hero card">
     <h2>Contact Us</h2>
     <p>We’d love to hear from you. For feedback, advertising, or support, contact us:</p>
-    <p>Email: <a href="mailto:support@yourdomain.com">support@yourdomain.com</a></p>
+    <p>Email: <a href="mailto:support@qrgenerator.online">support@qrgenerator.online</a></p>
   </section>
 
   <!-- Privacy -->
@@ -241,6 +241,7 @@
 
     const genBtn=$('#gen'), dlBtn=$('#download'), dlSvgBtn=$('#download-svg'), copyPayloadBtn=$('#copy-payload'), qrWrap=$('#qrwrap');
     let currentPayload="";
+    let qrCodeInstance = null;
 
     const soundSuccess = $('#soundSuccess');
     const soundError = $('#soundError');
@@ -264,7 +265,7 @@
       try{
         const payload=buildPayload(); currentPayload=payload;
         qrWrap.innerHTML='';
-        new QRCode(qrWrap,{text:payload,width:256,height:256});
+        qrCodeInstance = new QRCode(qrWrap,{text:payload,width:256,height:256});
         dlBtn.disabled=false; dlSvgBtn.disabled=false; copyPayloadBtn.disabled=false;
         playSuccess();
       }catch(err){alert(err);}
@@ -278,12 +279,29 @@
       playSuccess();
     });
 
+    function generateSVG(qr) {
+      if (!qr || !qr._oQRCode) return '';
+      const size = qr._oQRCode.getModuleCount();
+      const svg = ['<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 ' + size + ' ' + size + '">'];
+      svg.push('<rect width="' + size + '" height="' + size + '" fill="#FFFFFF"/>');
+      svg.push('<path d="');
+      for (let row = 0; row < size; row++) {
+        for (let col = 0; col < size; col++) {
+          if (qr._oQRCode.isDark(row, col)) {
+            svg.push('M' + col + ' ' + row + 'h1v1h-1z');
+          }
+        }
+      }
+      svg.push('" fill="#000000"/>');
+      svg.push('</svg>');
+      return svg.join('');
+    }
+
     dlSvgBtn.addEventListener('click',()=>{
-      if(!currentPayload) return alert('No QR code yet.');
-      let container=document.createElement('div');
-      new QRCode(container,{text:currentPayload,width:256,height:256,useSVG:true});
-      let svgEl=container.querySelector('svg');
-      let blob=new Blob([svgEl.outerHTML],{type:"image/svg+xml"});
+      if(!qrCodeInstance) return alert('No QR code yet.');
+      let svgStr = generateSVG(qrCodeInstance);
+      if (!svgStr) return alert('Failed to generate SVG.');
+      let blob=new Blob([svgStr],{type:"image/svg+xml"});
       let url=URL.createObjectURL(blob);
       let a=document.createElement('a');
       a.href=url; a.download="smartqr.svg"; a.click();
@@ -292,7 +310,7 @@
     });
 
     copyPayloadBtn.addEventListener('click',()=>{
-      if(currentPayload) navigator.clipboard.writeText(currentPayload).then(()=>{alert("QR content copied!"); playSuccess();});
+      if(currentPayload) navigator.clipboard.writeText(currentPayload).then(()=>{alert("QR content copied!"); playSuccess();}).catch(err => {alert('Failed to copy: ' + err); playError();});
     });
 
     // Scanner
@@ -356,4 +374,4 @@
     });
   </script>
 </body>
-</html>
+</html> 
